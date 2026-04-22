@@ -20,9 +20,9 @@ def get_headlines():
             feed = feedparser.parse(url, request_headers={"User-Agent": "Mozilla/5.0"})
             for entry in feed.entries[:8]:
                 headlines.append(entry.title)
-            print(f"  ✅ {name}: {len(feed.entries[:8])}건")
+            print(f"  [{name}]: {len(feed.entries[:8])}건")
         except Exception as e:
-            print(f"  ⚠️ {name} 오류: {e}")
+            print(f"  [{name}] 오류: {e}")
     return headlines
 
 def get_stock_prices():
@@ -83,24 +83,29 @@ def summarize_with_gemini(headlines, prices):
 
 💡 오늘의 한마디
 (한 문장)"""
+
     resp = requests.post(
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}",
-        json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=30)
+        json={"contents": [{"parts": [{"text": prompt}]}]},
+        timeout=30,
+    )
     resp.raise_for_status()
     return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 def send_telegram(message):
     resp = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
-        data={"chat_id": TELEGRAM_CHAT_ID, "text": message}, timeout=15)
+        data={"chat_id": TELEGRAM_CHAT_ID, "text": message},
+        timeout=15,
+    )
     return resp.json().get("ok", False)
 
-print("📡 뉴스 수집 중...")
+print("뉴스 수집 중...")
 headlines = get_headlines()
-print(f"  총 {len(headlines)}개\n")
-print("📊 시세 조회 중...")
+print(f"총 {len(headlines)}개\n")
+print("시세 조회 중...")
 prices = get_stock_prices()
-print("🤖 AI 요약 중...")
+print("AI 요약 중...")
 message = summarize_with_gemini(headlines, prices)
-print("📨 텔레그램 발송 중...")
-print("✅ 성공!" if send_telegram(message) else "❌ 실패")
+print("텔레그램 발송 중...")
+print("성공!" if send_telegram(message) else "실패")
